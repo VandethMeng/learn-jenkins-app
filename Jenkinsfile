@@ -59,10 +59,12 @@ pipeline {
             post {
                 always {
                     publishHTML([
-                        allowMissing: false,
                         reportDir: 'playwright-report',
                         reportFiles: 'index.html',
-                        reportName: 'Playwright E2E Report'
+                        reportName: 'Playwright E2E Report',
+                        allowMissing: false,
+                        keepAll: true,
+                        alwaysLinkToLastBuild: true
                     ])
                 }
             }
@@ -79,7 +81,8 @@ pipeline {
                 sh '''
                    npm install netlify-cli -g
                    netlify --version
-                   # netlify deploy --prod --dir=build
+                   # Uncomment below to deploy automatically
+                   # netlify deploy --prod --dir=build --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
                 '''
             }
         }
