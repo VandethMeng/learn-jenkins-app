@@ -3,6 +3,7 @@ pipeline {
 
     stages {
 
+        // -----------------------------
         stage('Build') {
             agent {
                 docker {
@@ -12,16 +13,19 @@ pipeline {
             }
             steps {
                 sh '''
+                    echo "Listing workspace before build:"
                     ls -la
                     node --version
                     npm --version
                     npm ci
                     npm run build
-                    ls -la
+                    echo "Build output:"
+                    ls -la build
                 '''
             }
         }
 
+        // -----------------------------
         stage('Tests') {
             agent {
                 docker {
@@ -31,16 +35,19 @@ pipeline {
             }
             steps {
                 sh '''
+                    echo "Running tests in CI mode..."
                     npm test
                 '''
             }
             post {
                 always {
-                    junit 'jest-results/junit.xml'
+                    // Archive JUnit results
+                    junit 'test-results/*.xml'
                 }
             }
         }
 
+        // -----------------------------
         stage('E2E') {
             agent {
                 docker {
@@ -51,13 +58,18 @@ pipeline {
             steps {
                 sh '''
                     npm install serve
-                    node_modules/.bin/serve -s build &
+                    # Serve the build folder
+                    npx serve -s build & 
+                    SERVER_PID=$!
                     sleep 10
-                    npx playwright test --report=html
+                    # Run Playwright tests with HTML report
+                    npx playwright test --reporter=html
+                    kill $SERVER_PID
                 '''
             }
             post {
                 always {
+                    // Publish Playwright HTML report
                     publishHTML([
                         reportDir: 'playwright-report',
                         reportFiles: 'index.html',
@@ -70,6 +82,7 @@ pipeline {
             }
         }
 
+        // -----------------------------
         stage('Deploy') {
             agent {
                 docker {
