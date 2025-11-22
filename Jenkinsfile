@@ -23,6 +23,12 @@ pipeline {
                     ls -la build
                 '''
             }
+            post {
+                always {
+                    // Archive the React build folder
+                    archiveArtifacts artifacts: 'build/**', allowEmptyArchive: true
+                }
+            }
         }
 
         // -----------------------------
@@ -35,13 +41,13 @@ pipeline {
             }
             steps {
                 sh '''
-                    echo "Running tests in CI mode..."
+                    echo "Running Jest tests in CI mode..."
                     npm test
                 '''
             }
             post {
                 always {
-                    // Archive JUnit results
+                    // Archive JUnit test results
                     junit 'test-results/*.xml'
                 }
             }
@@ -58,7 +64,7 @@ pipeline {
             steps {
                 sh '''
                     npm install serve
-                    # Serve the build folder
+                    # Serve the React build folder
                     npx serve -s build & 
                     SERVER_PID=$!
                     sleep 10
@@ -92,12 +98,32 @@ pipeline {
             }
             steps {
                 sh '''
-                   npx install netlify-cli -g
-                   netlify --version
+                   echo "Deploying to Netlify..."
+                   # Use npx to avoid global install issues
+                   npx netlify --version
                    # Uncomment below to deploy automatically
-                   # netlify deploy --prod --dir=build --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
+                   # npx netlify deploy --prod --dir=build --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
                 '''
             }
+            post {
+                success {
+                    echo "Deployment stage finished successfully!"
+                    // Optional: archive build folder after deploy
+                    archiveArtifacts artifacts: 'build/**', allowEmptyArchive: true
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline finished at ${new Date()}"
+        }
+        success {
+            echo "Pipeline completed successfully!"
+        }
+        failure {
+            echo "Pipeline failed. Check Build, Test, E2E, or Deploy stages for errors."
         }
     }
 }
