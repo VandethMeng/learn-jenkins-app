@@ -92,7 +92,7 @@ pipeline {
             }
             steps {
                 sh '''
-                   npm install netlify-cli -g
+                   npx install netlify-cli -g
                    netlify --version
                    # Uncomment below to deploy automatically
                    # netlify deploy --prod --dir=build --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
