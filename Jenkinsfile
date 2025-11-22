@@ -1,9 +1,10 @@
 pipeline {
     agent any
 
-    environment{
+    environment {
         NETLIFY_SITE_ID = '977243c1-0b34-4eb0-a2a3-477e2c0d680d'
-        NETLIFY_AUTH_TOKEN = credentials('netify-token')
+        // Make sure the Jenkins credential ID matches exactly
+        NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
 
     stages {
@@ -30,7 +31,6 @@ pipeline {
             }
             post {
                 always {
-                    // Archive the React build folder
                     archiveArtifacts artifacts: 'build/**', allowEmptyArchive: true
                 }
             }
@@ -52,7 +52,6 @@ pipeline {
             }
             post {
                 always {
-                    // Archive JUnit test results
                     junit 'test-results/*.xml'
                 }
             }
@@ -80,7 +79,6 @@ pipeline {
             }
             post {
                 always {
-                    // Publish Playwright HTML report
                     publishHTML([
                         reportDir: 'playwright-report',
                         reportFiles: 'index.html',
@@ -102,21 +100,20 @@ pipeline {
                 }
             }
             steps {
-                sh '''
-                   echo "Deploying to Netlify..."
-                   # Use npx to avoid global install issues
-                   npx netlify --version
-                   echo "Deploying to production, site ID: $NETLIFY_SITE_ID"
-                   node_modules/.bin/netlify status
-                   node_modules/.bin/netlify deploy --dir=build --prod
-                   # Uncomment below to deploy automatically
-                   # npx netlify deploy --prod --dir=build --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
-                '''
+                // Use withCredentials to inject the secret safely
+                withCredentials([string(credentialsId: 'netlify-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
+                    sh '''
+                        echo "Deploying to Netlify..."
+                        npx netlify --version
+                        echo "Deploying to production, site ID: $NETLIFY_SITE_ID"
+                        # Deploy without triggering Netlify build (we already built in Jenkins)
+                        npx netlify deploy --dir=build --prod --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
+                    '''
+                }
             }
             post {
                 success {
                     echo "Deployment stage finished successfully!"
-                    // Optional: archive build folder after deploy
                     archiveArtifacts artifacts: 'build/**', allowEmptyArchive: true
                 }
             }
