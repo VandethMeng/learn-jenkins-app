@@ -3,9 +3,7 @@ pipeline {
 
     environment {
         NETLIFY_SITE_ID = '977243c1-0b34-4eb0-a2a3-477e2c0d680d'
-        // Make sure the Jenkins credential ID matches exactly
-        NETLIFY_AUTH_TOKEN = credentials('netify-token')
-
+        NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
 
     stages {
@@ -22,10 +20,13 @@ pipeline {
                 sh '''
                     echo "Listing workspace before build:"
                     ls -la
+
                     node --version
                     npm --version
+
                     npm ci
                     npm run build
+
                     echo "Build output:"
                     ls -la build
                 '''
@@ -58,7 +59,8 @@ pipeline {
             }
         }
 
-         stage('E2E') {
+        // -----------------------------
+        stage('E2E') {
             agent {
                 docker {
                     image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
@@ -68,11 +70,8 @@ pipeline {
             steps {
                 sh '''
                     npm install serve
-                    # Serve the React build folder
-                    npx serve -s build & 
-                    SERVER_PID=$!
+                    npx serve -s build & SERVER_PID=$!
                     sleep 10
-                    # Run Playwright tests with HTML report
                     npx playwright test --reporter=html
                     kill $SERVER_PID
                 '''
@@ -99,12 +98,11 @@ pipeline {
                     reuseNode true
                 }
             }
-            environment{
+            environment {
                 CI_ENVIRONMENT_URL = 'https://precious-nougat-12f2bf.netlify.app'
             }
             steps {
                 sh '''
-                    # Run Playwright tests with HTML report
                     npx playwright test --reporter=html
                 '''
             }
@@ -131,16 +129,16 @@ pipeline {
                 }
             }
             steps {
-                // Use withCredentials to inject the secret safely
-                withCredentials([string(credentialsId: 'netify-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
+                withCredentials([string(credentialsId: 'netlify-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
                     sh '''
-                        echo "small change"
                         echo "Deploying to Netlify..."
                         npx netlify --version
-                        echo "Deploying to production, site ID: $NETLIFY_SITE_ID"
-                        # Deploy without triggering Netlify build (we already built in Jenkins)
-                        npx netlify deploy --prod --dir=build --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID --no-build
 
+                        echo "Deploying to production, site ID: $NETLIFY_SITE_ID"
+                        npx netlify deploy --prod --dir=build \
+                            --auth=$NETLIFY_AUTH_TOKEN \
+                            --site=$NETLIFY_SITE_ID \
+                            --no-build
                     '''
                 }
             }
