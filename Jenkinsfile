@@ -101,7 +101,7 @@ pipeline {
             }
             steps {
                 // Use withCredentials to inject the secret safely
-                withCredentials([string(credentialsId: 'netlify-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
+                withCredentials([string(credentialsId: 'netify-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
                     sh '''
                         echo "Deploying to Netlify..."
                         npx netlify --version
