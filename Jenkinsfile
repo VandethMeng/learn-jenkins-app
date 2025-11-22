@@ -58,16 +58,12 @@ pipeline {
             }
         }
 
-        // -----------------------------
-        stage('Prod E2E') {
+         stage('E2E') {
             agent {
                 docker {
                     image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
                     reuseNode true
                 }
-            }
-            environment{
-                CI_ENVIRONMENT_URL = 'https://precious-nougat-12f2bf.netlify.app/'
             }
             steps {
                 sh '''
@@ -87,6 +83,37 @@ pipeline {
                         reportDir: 'playwright-report',
                         reportFiles: 'index.html',
                         reportName: 'Playwright E2E Report',
+                        allowMissing: false,
+                        keepAll: true,
+                        alwaysLinkToLastBuild: true
+                    ])
+                }
+            }
+        }
+
+        // -----------------------------
+        stage('Prod E2E') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                }
+            }
+            environment{
+                CI_ENVIRONMENT_URL = 'https://precious-nougat-12f2bf.netlify.app'
+            }
+            steps {
+                sh '''
+                    # Run Playwright tests with HTML report
+                    npx playwright test --reporter=html
+                '''
+            }
+            post {
+                always {
+                    publishHTML([
+                        reportDir: 'playwright-report',
+                        reportFiles: 'index.html',
+                        reportName: 'Playwright production E2E Report',
                         allowMissing: false,
                         keepAll: true,
                         alwaysLinkToLastBuild: true
