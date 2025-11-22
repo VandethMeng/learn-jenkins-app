@@ -107,6 +107,8 @@ pipeline {
                    # Use npx to avoid global install issues
                    npx netlify --version
                    echo "Deploying to production, site ID: $NETLIFY_SITE_ID"
+                   node_modules/.bin/netlify status
+                   node_modules/.bin/netlify deploy --dir=build --prod
                    # Uncomment below to deploy automatically
                    # npx netlify deploy --prod --dir=build --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
                 '''
