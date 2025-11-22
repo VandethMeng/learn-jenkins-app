@@ -107,7 +107,8 @@ pipeline {
                         npx netlify --version
                         echo "Deploying to production, site ID: $NETLIFY_SITE_ID"
                         # Deploy without triggering Netlify build (we already built in Jenkins)
-                        npx netlify deploy --dir=build --prod --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID
+                        npx netlify deploy --prod --dir=build --auth=$NETLIFY_AUTH_TOKEN --site=$NETLIFY_SITE_ID --no-build
+
                     '''
                 }
             }
