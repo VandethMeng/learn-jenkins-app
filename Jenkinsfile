@@ -5,6 +5,7 @@ pipeline {
         NETLIFY_SITE_ID = '977243c1-0b34-4eb0-a2a3-477e2c0d680d'
         // Make sure the Jenkins credential ID matches exactly
         NETLIFY_AUTH_TOKEN = credentials('netify-token')
+
     }
 
     stages {
@@ -58,12 +59,15 @@ pipeline {
         }
 
         // -----------------------------
-        stage('E2E') {
+        stage('Prod E2E') {
             agent {
                 docker {
                     image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
                     reuseNode true
                 }
+            }
+            environment{
+                CI_ENVIRONMENT_URL = 'https://precious-nougat-12f2bf.netlify.app/'
             }
             steps {
                 sh '''
