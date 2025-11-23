@@ -10,12 +10,6 @@ pipeline {
 
         // -----------------------------
         stage('Build') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
             steps {
                 sh '''
                     echo "Listing workspace before build:"
@@ -40,12 +34,6 @@ pipeline {
 
         // -----------------------------
         stage('Tests') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
             steps {
                 sh '''
                     echo "Running Jest tests in CI mode..."
@@ -61,12 +49,6 @@ pipeline {
 
         // -----------------------------
         stage('E2E') {
-            agent {
-                docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
-                    reuseNode true
-                }
-            }
             steps {
                 sh '''
                     npm install serve
@@ -92,12 +74,6 @@ pipeline {
 
         // -----------------------------
         stage('Prod E2E') {
-            agent {
-                docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
-                    reuseNode true
-                }
-            }
             environment {
                 CI_ENVIRONMENT_URL = 'https://precious-nougat-12f2bf.netlify.app'
             }
@@ -122,16 +98,11 @@ pipeline {
 
         // -----------------------------
         stage('Deploy') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
             steps {
                 withCredentials([string(credentialsId: 'netlify-token', variable: 'NETLIFY_AUTH_TOKEN')]) {
                     sh '''
                         echo "Deploying to Netlify..."
+                        npm install -g netlify-cli
                         npx netlify --version
 
                         echo "Deploying to production, site ID: $NETLIFY_SITE_ID"
