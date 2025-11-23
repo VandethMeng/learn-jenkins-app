@@ -39,7 +39,8 @@
     "@playwright/test": "^1.56.1",
     "@types/node": "^20.8.6",
     "jest-junit": "^16.0.0",
-    "netlify-cli": "^21.6.0"
+    "netlify-cli": "^21.6.0",
+    "serve": "^14.2.5"
   },
   "jest-junit": {
     "suiteName": "jest tests",
