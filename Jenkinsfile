@@ -92,7 +92,19 @@ pipeline {
         }
 
         // -----------------------------
-        stage('Deploy') {
+        stage('Deploy staging') {
+            when {
+                expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+            }
+            steps {
+                sh '''
+                    echo "Deploying to Netlify staging..."
+                    npx netlify deploy --dir=build --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN
+                '''
+            }
+        }
+
+           stage('Deploy prod') {
             when {
                 expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
             }
