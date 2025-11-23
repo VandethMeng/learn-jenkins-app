@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         NETLIFY_SITE_ID = '977243c1-0b34-4eb0-a2a3-477e2c0d680d'
-        // Make sure NETLIFY_AUTH_TOKEN is configured in Jenkins credentials
+        // Use Jenkins Secret Text credential ID for Netlify token
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
 
@@ -61,23 +61,25 @@ pipeline {
         stage('E2E Tests') {
             steps {
                 sh '''
-                    echo "Starting static server locally using npx"
-                    # Make sure 'serve' is installed as dev dependency
-                    npx serve -s build &
+                    echo "Starting static server locally in background..."
+                    npx serve -s build -l 3000 &
+                    SERVER_PID=$!
 
                     echo "Waiting for server to be ready..."
                     sleep 5
 
-                    echo "Installing Playwright browsers"
+                    echo "Installing Playwright browsers..."
                     npx playwright install
 
-                    echo "Running Playwright E2E tests"
+                    echo "Running Playwright E2E tests..."
                     npx playwright test --reporter=html
+
+                    echo "Stopping static server..."
+                    kill $SERVER_PID || true
                 '''
             }
             post {
                 always {
-                    // Archive Playwright HTML reports
                     publishHTML(target: [
                         reportDir: 'playwright-report',
                         reportFiles: 'index.html',
@@ -95,12 +97,10 @@ pipeline {
                 expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
             }
             steps {
-                withCredentials([string(credentialsId: 'NETLIFY_AUTH_TOKEN', variable: 'NETLIFY_AUTH_TOKEN')]) {
-                    sh '''
-                        echo "Deploying to Netlify"
-                        npx netlify deploy --prod --dir=build --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN
-                    '''
-                }
+                sh '''
+                    echo "Deploying to Netlify..."
+                    npx netlify deploy --prod --dir=build --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN
+                '''
             }
         }
     }
