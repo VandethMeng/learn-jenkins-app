@@ -60,14 +60,12 @@ pipeline {
         stage('E2E Tests') {
             steps {
                 sh '''
-                    echo "Installing static server"
-                    npm install -g serve
+                    echo "Starting static server locally using npx"
+                    # Make sure 'serve' is installed as dev dependency
+                    npx serve -s build &
 
-                    echo "Starting static server in background"
-                    serve -s build &
-
-                    # Wait for server to be ready
-                    sleep 10
+                    echo "Waiting for server to be ready..."
+                    sleep 5
 
                     echo "Installing Playwright browsers"
                     npx playwright install
