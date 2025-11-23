@@ -3,7 +3,8 @@ pipeline {
 
     environment {
         NETLIFY_SITE_ID = '977243c1-0b34-4eb0-a2a3-477e2c0d680d'
-        NETLIFY_AUTH_TOKEN = credentials('netlify-token') // global token for all stages
+        // Make sure NETLIFY_AUTH_TOKEN is configured in Jenkins credentials
+        NETLIFY_AUTH_TOKEN = credentials('netlify-token')
     }
 
     stages {
@@ -60,21 +61,18 @@ pipeline {
         stage('E2E Tests') {
             steps {
                 sh '''
-                    echo "Starting static server locally using npx serve..."
-                    npx serve -s build -l 5000 &
-                    SERVER_PID=$!
+                    echo "Starting static server locally using npx"
+                    # Make sure 'serve' is installed as dev dependency
+                    npx serve -s build &
 
                     echo "Waiting for server to be ready..."
                     sleep 5
 
-                    echo "Installing Playwright browsers..."
+                    echo "Installing Playwright browsers"
                     npx playwright install
 
-                    echo "Running Playwright E2E tests..."
+                    echo "Running Playwright E2E tests"
                     npx playwright test --reporter=html
-
-                    # Stop the server
-                    kill $SERVER_PID
                 '''
             }
             post {
@@ -97,10 +95,12 @@ pipeline {
                 expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
             }
             steps {
-                sh '''
-                    echo "Deploying to Netlify"
-                    npx netlify deploy --prod --dir=build --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN
-                '''
+                withCredentials([string(credentialsId: 'NETLIFY_AUTH_TOKEN', variable: 'NETLIFY_AUTH_TOKEN')]) {
+                    sh '''
+                        echo "Deploying to Netlify"
+                        npx netlify deploy --prod --dir=build --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN
+                    '''
+                }
             }
         }
     }
